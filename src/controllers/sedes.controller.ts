@@ -2,17 +2,22 @@ import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where} fro
 import {del, get, getModelSchemaRef, getWhereSchemaFor, HttpErrors, param, patch, post, put, requestBody, response} from '@loopback/rest';
 import {Sedes} from '../models';
 import {SedesRepository} from '../repositories';
-import {SedesServices} from '../services';
+import {SedesServices, UsuariosServices} from '../services';
 import {Usuarios} from './../models/usuarios.model';
+import {UsuariosRepository} from './../repositories/usuarios.repository';
 
 export class SedesController {
   private sedesServices: SedesServices;
+  private userServices: UsuariosServices;
 
   constructor(
     @repository(SedesRepository)
-    public sedesRepository: SedesRepository
+    public sedesRepository: SedesRepository,
+    @repository(UsuariosRepository)
+    public usuarioRepository: UsuariosRepository
   ) {
     this.sedesServices = new SedesServices(sedesRepository);
+    this.userServices = new UsuariosServices(usuarioRepository);
   }
 
   @post('/sedes/create')
@@ -124,12 +129,14 @@ export class SedesController {
   async createSedeUser(
     @param.path.string('id') id: typeof Sedes.prototype.id,
     @requestBody({
-      content: {'application/json': {schema: getModelSchemaRef(Usuarios, {title: 'NewUsuariosInSedes', exclude: ['id'], optional: ['sedeId']})}}
+      content: {'application/json': {schema: getModelSchemaRef(Usuarios, {title: 'NewUsuariosInSedes', exclude: ['id', 'sedeId']})}}
     })
     usuarios: Omit<Usuarios, 'id'>
   ): Promise<Usuarios> {
+    this.userServices.validarCamposUsuario(usuarios);
     await this.sedesServices.validarExistenciaSede(id);
-    return this.sedesRepository.usuarios(id).create(usuarios);
+    await this.userServices.validarInexistenciaUsuario(usuarios.correo, usuarios.cedula);
+    return this.sedesRepository.usuarios(id).create({...usuarios, rol: 'cliente'});
   }
 
   @patch('/sedes/{id}/usuarios', {
@@ -152,10 +159,12 @@ export class SedesController {
     usuarios: Partial<Usuarios>,
     @param.query.object('where', getWhereSchemaFor(Usuarios)) where?: Where<Usuarios>
   ): Promise<Count> {
+    this.userServices.protegerCredenciales(usuarios);
     await this.sedesServices.validarExistenciaSede(id);
     return this.sedesRepository.usuarios(id).patch(usuarios, where);
   }
 
+  /*
   @del('/sedes/{id}/usuarios', {
     responses: {
       '200': {
@@ -170,5 +179,5 @@ export class SedesController {
   ): Promise<Count> {
     await this.sedesServices.validarExistenciaSede(id);
     return this.sedesRepository.usuarios(id).delete(where);
-  }
+  } */
 }

@@ -92,4 +92,10 @@ export class UsuariosServices {
       if (newUser) throw new HttpErrors[400]('La cedula ya está ocupada');
     }
   }
+
+  /** Proteje las credenciales de los usuarios en ediciones en masa */
+  public protegerCredenciales(data: Partial<Usuarios>) {
+    if (data.cedula || data.correo || data.contraseina || data.rol)
+      throw new HttpErrors[401]('No se puden cambiar las credenciales de acceso al sistema tampoco los roles de usuario');
+  }
 }
