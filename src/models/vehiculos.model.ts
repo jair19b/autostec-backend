@@ -5,64 +5,63 @@ export class Vehiculos extends Entity {
   @property({
     type: 'string',
     id: true,
-    generated: true,
+    generated: true
   })
   id?: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   placa: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
-  tipoVeiculo: string;
+  tipoVehiculo: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   marca: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   anio: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   modelo: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   capacidadPasajeros: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   cilindraje: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   paisOrigen: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
   descripcion: string;
-
 
   constructor(data?: Partial<Vehiculos>) {
     super(data);
