@@ -26,9 +26,15 @@ export class VehiculosServices {
     if (!descripcion || descripcion.length < 5) throw new HttpErrors[400]('Necesitamos una descripcion del vehiculo de minimo 5 caracteres');
   }
 
-  public async validarExistenciaVehiculo(placa: string, control: boolean = true): Promise<void> {
-    const vehiculo = await this.vehiculosRepository.findOne({where: {placa: placa}});
-    if (control && !vehiculo) throw new HttpErrors[400](`El vehiculo de placas ${placa} no existe`);
-    if (!control && vehiculo) throw new HttpErrors[400](`El vehiculo de placas ${placa} ya se encuentra registrado`);
+  public async validarExistenciaVehiculo(placa: any, control: boolean = true, byId: boolean = false): Promise<void> {
+    if (byId) {
+      const vehiculo = await this.vehiculosRepository.findOne({where: {id: placa}});
+      if (control && !vehiculo) throw new HttpErrors[400](`El vehiculo ${placa} no existe`);
+      if (!control && vehiculo) throw new HttpErrors[400](`El vehiculo ${placa} ya se encuentra registrado`);
+    } else {
+      const vehiculo = await this.vehiculosRepository.findOne({where: {placa: placa}});
+      if (control && !vehiculo) throw new HttpErrors[400](`El vehiculo de placas ${placa} no existe`);
+      if (!control && vehiculo) throw new HttpErrors[400](`El vehiculo de placas ${placa} ya se encuentra registrado`);
+    }
   }
 }

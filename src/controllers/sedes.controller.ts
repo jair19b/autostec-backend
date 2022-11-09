@@ -50,14 +50,14 @@ export class SedesController {
     return this.sedesRepository.find(filter);
   }
 
-  @patch('/sedes/update')
+  @patch('/sedes/update-all')
   @response(200, {
     description: 'Sedes PATCH success count',
     content: {'application/json': {schema: CountSchema}}
   })
   async updateAll(
-    @requestBody({content: {'application/json': {schema: getModelSchemaRef(Sedes, {partial: true})}}})
-    sedes: Sedes,
+    @requestBody({content: {'application/json': {schema: getModelSchemaRef(Sedes, {partial: true, exclude: ['id']})}}})
+    sedes: Omit<Sedes, 'id'>,
     @param.where(Sedes) where?: Where<Sedes>
   ): Promise<Count> {
     return this.sedesRepository.updateAll(sedes, where);
@@ -117,11 +117,11 @@ export class SedesController {
     description: 'Array of Sedes has many Usuarios',
     content: {'application/json': {schema: {type: 'array', items: getModelSchemaRef(Usuarios)}}}
   })
-  async findSedeUser(@param.path.string('id') id: string, @param.query.object('filter') filter?: Filter<Usuarios>): Promise<Usuarios[]> {
+  async findSedeUsers(@param.path.string('id') id: string, @param.query.object('filter') filter?: Filter<Usuarios>): Promise<Usuarios[]> {
     return this.sedesRepository.usuarios(id).find(filter);
   }
 
-  @post('/sedes/{id}/usuarios')
+  @post('/sedes/{id}/clientes')
   @response(200, {
     description: 'Sedes model instance',
     content: {'application/json': {schema: getModelSchemaRef(Usuarios)}}

@@ -1,8 +1,9 @@
 import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where} from '@loopback/repository';
-import {del, get, getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody, response} from '@loopback/rest';
+import {del, get, getModelSchemaRef, getWhereSchemaFor, HttpErrors, param, patch, post, put, requestBody, response} from '@loopback/rest';
 import {Vehiculos} from '../models';
 import {VehiculosRepository} from '../repositories';
 import {UsuariosServices, VehiculosServices} from '../services';
+import {Revisiones} from './../models/revisiones.model';
 import {Usuarios} from './../models/usuarios.model';
 import {UsuariosRepository} from './../repositories/usuarios.repository';
 
@@ -150,7 +151,7 @@ export class VehiculosController {
     await this.vehiculosRepository.deleteById(id);
   }
 
-  @get('/vehiculos/{id}/usuarios', {
+  @get('/vehiculos/{id}/cliente', {
     responses: {
       '200': {
         description: 'Usuarios belonging to Vehiculos',
@@ -164,5 +165,88 @@ export class VehiculosController {
   })
   async getUsuarios(@param.path.string('id') id: typeof Vehiculos.prototype.id): Promise<Usuarios> {
     return this.vehiculosRepository.usuario(id);
+  }
+
+  @get('/vehiculos/{id}/revisiones', {
+    responses: {
+      '200': {
+        description: 'Array of Vehiculos has many Revisiones',
+        content: {
+          'application/json': {
+            schema: {type: 'array', items: getModelSchemaRef(Revisiones)}
+          }
+        }
+      }
+    }
+  })
+  async findRevision(@param.path.string('id') id: string, @param.query.object('filter') filter?: Filter<Revisiones>): Promise<Revisiones[]> {
+    return this.vehiculosRepository.revisiones(id).find(filter);
+  }
+
+  @post('/vehiculo/{id}/create/revision', {
+    responses: {
+      '200': {
+        description: 'Vehiculos model instance',
+        content: {'application/json': {schema: getModelSchemaRef(Revisiones)}}
+      }
+    }
+  })
+  async createRevison(
+    @param.path.string('id') id: typeof Vehiculos.prototype.id,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Revisiones, {
+            title: 'NewRevisionesInVehiculos',
+            exclude: ['id', 'vehiculoId']
+          })
+        }
+      }
+    })
+    revisiones: Omit<Revisiones, 'id'>
+  ): Promise<Revisiones> {
+    const user = await this.usuariosRepository.findOne({where: {and: [{id: revisiones.mecanicoId}, {rol: 'mecanico'}]}});
+    if (!user) throw new HttpErrors[400]('No podemos encontrar el mecanico para esta revison');
+    return this.vehiculosRepository.revisiones(id).create(revisiones);
+  }
+
+  @patch('/vehiculo/{id}/revisiones', {
+    responses: {
+      '200': {
+        description: 'Vehiculos.Revisiones PATCH success count',
+        content: {'application/json': {schema: CountSchema}}
+      }
+    }
+  })
+  async patchRevisiones(
+    @param.path.string('id') id: string,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Revisiones, {partial: true})
+        }
+      }
+    })
+    revisiones: Partial<Revisiones>,
+    @param.query.object('where', getWhereSchemaFor(Revisiones)) where?: Where<Revisiones>
+  ): Promise<Count> {
+    await this.vehiculosServices.validarExistenciaVehiculo(id, false, true);
+    return this.vehiculosRepository.revisiones(id).patch(revisiones, where);
+  }
+
+  @del('/vehiculo/{id}/revisiones', {
+    responses: {
+      '200': {
+        description: 'Vehiculos.Revisiones DELETE success count',
+        content: {'application/json': {schema: CountSchema}}
+      }
+    }
+  })
+  async deleteRevisiones(
+    @param.path.string('id') id: string,
+    @param.query.object('where', getWhereSchemaFor(Revisiones)) where?: Where<Revisiones>
+  ): Promise<Count> {
+    await this.vehiculosServices.validarExistenciaVehiculo(id, false, true);
+    return this.vehiculosRepository.revisiones(id).delete(where);
   }
 }
